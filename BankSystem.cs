@@ -16,14 +16,17 @@ namespace BD_EF_Core
 
         public void HandleLoggedInUser(string email)
         {
-            //Console.Clear();
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine(" +-+-+-+-+-+-+-+-+-+\r\n | TRANSACTION MENUE |\r\n +-+-+-+-+-+-+-+-+-+");
-            Console.ResetColor();
+            
+
+            UserAccounts();
 
             while (true)
             {
-                //UserAccounts();
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine(" +-+-+-+-+-+-+-+-+-+\r\n | TRANSACTION MENUE |\r\n +-+-+-+-+-+-+-+-+-+");
+                Console.ResetColor();
+
 
                 Console.ForegroundColor = ConsoleColor.Blue;
                 Console.WriteLine("1. Create Bank Account");
@@ -54,8 +57,8 @@ namespace BD_EF_Core
                         DeleteAccount();
                         break;
                     case "3":
-                        UserAccounts();
-                        //Deposit();
+                        Console.Clear();
+                        Deposit();
                         break;
                     case "4":
                         Console.Clear();
@@ -179,6 +182,8 @@ namespace BD_EF_Core
         }
         public void DeleteAccount()
         {
+            UserAccounts();
+
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(" +-+-+-+-+-+-+-+-+-+\r\n | DELETING ACCOUNT |\r\n +-+-+-+-+-+-+-+-+-+");
@@ -193,7 +198,7 @@ namespace BD_EF_Core
 
             try
             {
-                using (var context = new ApplicationDBContext()) // Replace YourDbContext with the actual name of your DbContext class
+                using (var context = new ApplicationDBContext()) 
                 {
                     var accountToDelete = context.Accounts.Where(x=>x.Id == accountHolderID).SingleOrDefault(a => a.AccountNumber == accountNumber);
 
@@ -225,9 +230,9 @@ namespace BD_EF_Core
 
         public void UserAccounts()
         {
-            Console.Clear();
+            //Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine(" +-+-+-+-+-+-+-+-+-+\r\n | YOUR ACCOUNTS INFO |\r\n +-+-+-+-+-+-+-+-+-+");
+            Console.WriteLine("  YOUR ACCOUNTS INFO ");
             Console.ResetColor();
             try
             {
@@ -251,6 +256,76 @@ namespace BD_EF_Core
         }
 
 
+
+        public void Deposit()
+        {
+            UserAccounts();
+
+            
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(" +-+-+-+-+-+-+-+-+-+\r\n | DEPOSITTING |\r\n +-+-+-+-+-+-+-+-+-+");
+            Console.ResetColor();
+
+            Console.Write("Enter the account number to deposit into: ");
+            if (!int.TryParse(Console.ReadLine(), out int accountNumber))
+            {
+                Console.WriteLine("Invalid account number.");
+                return;
+            }
+
+            Console.Write("Enter the amount to deposit: ");
+            if (!decimal.TryParse(Console.ReadLine(), out decimal amount) || amount <= 0)
+            {
+                Console.WriteLine("Invalid deposit amount.");
+                return;
+            }
+
+            try
+            {
+                using (var context = new ApplicationDBContext()) 
+                {
+                    var account = context.Accounts.SingleOrDefault(a => a.AccountNumber == accountNumber);
+
+                    if (account != null)
+                    {
+                        account.Balance += amount; // Update the balance in memory
+                        int Rowaffected = context.SaveChanges();
+
+                        if(Rowaffected > 0)
+                        {
+                            Console.WriteLine("Depositing successful.");
+
+                            Transaction transaction = new Transaction();
+                            var depositTransaction = new Transaction
+                            {
+                                Amount = amount,
+                                Type = TransactionType.Deposit,
+                                AccountNumber = account.AccountNumber,
+                                Timestamp = DateTime.UtcNow
+                            };
+
+                            context.Transactions.Add(depositTransaction);
+                            int rowsAffected = context.SaveChanges();
+                            if (rowsAffected > 0)
+                            {
+
+                                Console.WriteLine("Transaction regesteried.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Account not found. Or a problem happend while depositting ");
+                        return;
+                    }
+
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
 
 
     }
