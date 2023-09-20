@@ -68,8 +68,7 @@ namespace BD_EF_Core
                         Transfer();
                         break;
                     case "6":
-                        Console.Clear();
-                        //GetAccountHistory();
+                        GetAccountHistory();
                         break;
                     case "7":
                         //loggedInUser = null; // Logout the user.
@@ -401,6 +400,8 @@ namespace BD_EF_Core
 
         public void Transfer()
         {
+            UserAccounts();
+
             Console.Write("Enter the account number to transfer from: ");
             if (!int.TryParse(Console.ReadLine(), out int sourceAccountNumber))
             {
@@ -474,6 +475,57 @@ namespace BD_EF_Core
                 }
             }
         }
+
+
+
+        public void GetAccountHistory()
+        {
+            UserAccounts();
+
+            Console.Write("Enter the account number to show the history: ");
+            if (!int.TryParse(Console.ReadLine(), out int accountNumber))
+            {
+                Console.WriteLine("Invalid account number.");
+                return;
+            }
+
+            using (var context = new ApplicationDBContext())
+            {
+                var account = context.Accounts.SingleOrDefault(a => a.AccountNumber == accountNumber && a.Id == accountHolderID);
+
+                if (account == null)
+                {
+                    Console.WriteLine("Account not found.");
+                    return;
+                }
+
+                var transactions = context.Transactions
+                    .Where(t => t.AccountNumber == accountNumber)
+                    .ToList();
+
+                if (transactions.Any())
+                {
+                    Console.WriteLine($"Transaction History for Account {accountNumber}:");
+
+                    foreach (var transaction in transactions)
+                    {
+                        Console.WriteLine($"TransactionID: {transaction.TransactionId}");
+                        Console.WriteLine($"Type: {transaction.Type}");
+                        Console.WriteLine($"Amount: {transaction.Amount}");
+                        Console.WriteLine($"Source Account Number: {transaction.SourceAccountNumber}");
+                        Console.WriteLine($"Target Account Number: {transaction.TargetAccountNumber}");
+                        Console.WriteLine($"Account Number: {transaction.AccountNumber}");
+                        Console.WriteLine($"Timestamp: {transaction.Timestamp}");
+                        Console.WriteLine(new string('-', 40));
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No transaction history found for this account.");
+                }
+            }
+        }
+
 
 
 
