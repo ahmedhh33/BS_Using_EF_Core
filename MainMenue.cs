@@ -96,7 +96,7 @@ namespace BD_EF_Core
             string loginEmail = Console.ReadLine();
             Console.Write("Enter your password: ");
             string loginPassword = Console.ReadLine();
-
+            Console.Clear();
             if (bankSystem.Login(loginEmail, loginPassword))
             {
                 Console.WriteLine("Login successful.");

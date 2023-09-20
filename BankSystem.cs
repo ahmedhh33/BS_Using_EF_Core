@@ -22,7 +22,8 @@ namespace BD_EF_Core
 
             while (true)
             {
-                Console.Clear();
+                UserAccounts();
+
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine(" +-+-+-+-+-+-+-+-+-+\r\n | TRANSACTION MENUE |\r\n +-+-+-+-+-+-+-+-+-+");
                 Console.ResetColor();
@@ -61,8 +62,7 @@ namespace BD_EF_Core
                         Deposit();
                         break;
                     case "4":
-                        Console.Clear();
-                        //Withdraw();
+                        Withdraw();
                         break;
                     case "5":
                         Console.Clear();
@@ -324,6 +324,80 @@ namespace BD_EF_Core
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
+            }
+        }
+
+
+        public void Withdraw()
+        {
+            UserAccounts();
+
+            Console.Write("Enter the account number to withdraw from: ");
+            if (!int.TryParse(Console.ReadLine(), out int accountNumber))
+            {
+                Console.WriteLine("Invalid account number.");
+                return;
+            }
+
+            Console.Write("Enter the amount to withdraw: ");
+            if (!decimal.TryParse(Console.ReadLine(), out decimal amount) || amount <= 0)
+            {
+                Console.WriteLine("Invalid amount.");
+                return;
+            }
+
+            try
+            {
+                using (var context = new ApplicationDBContext())
+                {
+                    var account = context.Accounts.SingleOrDefault(a => a.AccountNumber == accountNumber && a.Id == accountHolderID);
+
+                    if (account != null)
+                    {
+                        if (account.Balance >= amount)
+                        {
+                            account.Balance -= amount; // Update the balance in memory
+                            int rowsAffected = context.SaveChanges();
+
+                            if (rowsAffected > 0)
+                            {
+                                Console.WriteLine("Withdrawal successful.");
+
+                                var withdrawalTransaction = new Transaction
+                                {
+                                    Amount = amount,
+                                    Type = TransactionType.Withdrawal,
+                                    AccountNumber = accountNumber,
+                                    Timestamp = DateTime.UtcNow
+                                };
+
+                                context.Transactions.Add(withdrawalTransaction);
+                                int transactionRowsAffected = context.SaveChanges();
+
+                                if (transactionRowsAffected > 0)
+                                {
+                                    Console.WriteLine("Transaction registered.");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Error updating account balance.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Insufficient funds.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Account not found.");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred: {e.Message}");
             }
         }
 
