@@ -65,9 +65,7 @@ namespace BD_EF_Core
                         Withdraw();
                         break;
                     case "5":
-                        Console.Clear();
-                        //Transferr();
-                        //Transfer();
+                        Transfer();
                         break;
                     case "6":
                         Console.Clear();
@@ -400,6 +398,83 @@ namespace BD_EF_Core
                 Console.WriteLine($"An error occurred: {e.Message}");
             }
         }
+
+        public void Transfer()
+        {
+            Console.Write("Enter the account number to transfer from: ");
+            if (!int.TryParse(Console.ReadLine(), out int sourceAccountNumber))
+            {
+                Console.WriteLine("Invalid account number.");
+                return;
+            }
+
+            Console.Write("Enter the account number to transfer to: ");
+            if (!int.TryParse(Console.ReadLine(), out int targetAccountNumber))
+            {
+                Console.WriteLine("Invalid target account number.");
+                return;
+            }
+
+            Console.Write("Enter the amount to transfer: ");
+            if (!decimal.TryParse(Console.ReadLine(), out decimal amount) || amount <= 0)
+            {
+                Console.WriteLine("Invalid transfer amount.");
+                return;
+            }
+
+            using (var context = new ApplicationDBContext())
+            {
+                using (var transaction = context.Database.BeginTransaction())
+                {
+                    try
+                    {
+                        var sourceAccount = context.Accounts.SingleOrDefault(a => a.AccountNumber == sourceAccountNumber && a.Id == accountHolderID);
+                        var targetAccount = context.Accounts.SingleOrDefault(a => a.AccountNumber == targetAccountNumber);
+
+                        if (sourceAccount == null || targetAccount == null)
+                        {
+                            Console.WriteLine("One of the accounts doesn't exist.");
+                            return;
+                        }
+
+                        if (sourceAccount.Balance >= amount)
+                        {
+                            sourceAccount.Balance -= amount;
+                            targetAccount.Balance += amount;
+
+                            context.SaveChanges();
+
+                            var transferTransaction = new Transaction
+                            {
+                                Amount = amount,
+                                Type = TransactionType.Transfer,
+                                SourceAccountNumber = sourceAccountNumber,
+                                TargetAccountNumber = targetAccountNumber,
+                                AccountNumber = sourceAccountNumber,
+                                Timestamp = DateTime.UtcNow
+                            };
+
+                            context.Transactions.Add(transferTransaction);
+                            context.SaveChanges();
+
+                            transaction.Commit();
+
+                            Console.WriteLine($"Transferred {amount} OMR from account {sourceAccountNumber} to account {targetAccountNumber}.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Insufficient funds in the source account.");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine($"An error occurred: {e.Message}");
+                    }
+                }
+            }
+        }
+
 
 
     }
