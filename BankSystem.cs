@@ -71,7 +71,8 @@ namespace BD_EF_Core
                         GetAccountHistory();
                         break;
                     case "7":
-                        //loggedInUser = null; // Logout the user.
+                        MainMenue mainMenue = new MainMenue();
+                        mainMenue.mainMenu();
                         return;
 
                     default:
@@ -452,10 +453,19 @@ namespace BD_EF_Core
                                 SourceAccountNumber = sourceAccountNumber,
                                 TargetAccountNumber = targetAccountNumber,
                                 AccountNumber = sourceAccountNumber,
-                                Timestamp = DateTime.UtcNow
+                                Timestamp = DateTime.Now
                             };
-
+                            var transferTargetTransaction = new Transaction
+                            {
+                                Amount = amount,
+                                Type = TransactionType.Transfer,
+                                SourceAccountNumber = sourceAccountNumber,
+                                TargetAccountNumber = targetAccountNumber,
+                                AccountNumber = targetAccountNumber,
+                                Timestamp = DateTime.Now
+                            };
                             context.Transactions.Add(transferTransaction);
+                            context.Transactions.Add(transferTargetTransaction);
                             context.SaveChanges();
 
                             transaction.Commit();
